@@ -12,7 +12,7 @@
 	<atom:link href="/feed/" rel="self" type="application/rss+xml" />
 	<link></link>
 	<description>Every random thought is displayed</description>
-	<lastBuildDate>Thu, 16 Aug 2018 01:42:04 +0000</lastBuildDate>
+	<lastBuildDate>Thu, 16 Aug 2018 08:43:27 +0000</lastBuildDate>
 	<language>en-US</language>
 	<sy:updatePeriod>hourly</sy:updatePeriod>
 	<sy:updateFrequency>1</sy:updateFrequency>
@@ -28,9 +28,11 @@
 	<item>
 		<title>Hello world!</title>
 		<link>/2018/08/16/hello-world/</link>
-		<pubDate>Thu, 16 Aug 2018 01:42:04 +0000</pubDate>
+		<pubDate>Wed, 15 Aug 2018 17:42:04 +0000</pubDate>
 		<dc:creator><![CDATA[thinkingreed]]></dc:creator>
-				<category><![CDATA[Uncategorized]]></category>
+				<category><![CDATA[Consistency Protocols]]></category>
+		<category><![CDATA[Distributed File System]]></category>
+		<category><![CDATA[Uncategorized]]></category>
 
 		<guid isPermaLink="false">http:/?p=1</guid>
 		<description><![CDATA[Welcome to WordPress. This is your first post. Edit or delete it, then start writing!]]></description>

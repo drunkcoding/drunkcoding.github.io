@@ -1,0 +1,29 @@
+.mainpart{ background-color:transparent;}
+#resume{ background-color:transparent;}
+
+.vertical-page #resume { padding-bottom:10px; }
+.vertical-page .chart-title { width:100%; text-align:center; margin-top:60px; margin-bottom:35px; }
+.vertical-page .chart-title h4 { font-size:48px; line-height:70px; }
+.vertical-page .skills { margin-top:60px; margin-bottom: 30px; }
+.vertical-page .chartbox { margin:20px 20px 0; }
+.vertical-page .charts { margin-top:0; }
+.easyPieChart { position: relative; text-align: center;}
+.easyPieChart canvas { position: absolute; top: 0; left: 0;}
+
+.hideme{opacity:0;}
+.charts{}
+.chart-title{margin-top:46px; float:left; color:#333;}
+.shortcode_chart , .shortcode_chart_skin{color:#333; font-size:24px; font-weight:400;}
+.shortcode_chart span , .shortcode_chart_skin span{color:#555;}
+.shortcode_chartbox{ margin:20px; float:left;}
+.shortcode_chartbox li { width:130px;}
+.shortcode_chartbox p{margin-top:20px !important; font-size:17px !important; font-weight:700 !important; color:#555 !important; text-align:center !important; text-transform:capitalize !important;}
+.chart{color:#333; font-size:24px; font-weight:400;}
+.chart span{visibility:hidden;}
+.chartbox p{margin-top:20px; font-size:17px; font-weight:700; color:#333; text-align:center; visibility:hidden; text-transform:capitalize;}
+.chartbox{margin-left:50px; margin-top:5px; float:left; display:block;}
+.car, .skills ul{ margin: 0; padding: 0; list-style: none; display: block; text-align:center;}
+.skills-title{margin-top:60px; float:left;}
+.clearfix:before,.clearfix:after{ content:""; display:table}
+.clearfix:after{clear:both}
+.car li, .skills ul li {display: inline-block; list-style:none; background:transparent !important;}

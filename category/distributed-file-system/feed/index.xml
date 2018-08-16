@@ -8,8 +8,8 @@
 	>
 
 <channel>
-	<title>Uncategorized &#8211; Peripatetic Temperament</title>
-	<atom:link href="/category/uncategorized/feed/" rel="self" type="application/rss+xml" />
+	<title>Distributed File System &#8211; Peripatetic Temperament</title>
+	<atom:link href="/category/distributed-file-system/feed/" rel="self" type="application/rss+xml" />
 	<link></link>
 	<description>Every random thought is displayed</description>
 	<lastBuildDate>Thu, 16 Aug 2018 08:43:27 +0000</lastBuildDate>
@@ -20,7 +20,7 @@
 
 <image>
 	<url>/wp-content/uploads/2018/08/cropped-tech_background_by_internetnerdette-2-32x32.jpg</url>
-	<title>Uncategorized &#8211; Peripatetic Temperament</title>
+	<title>Distributed File System &#8211; Peripatetic Temperament</title>
 	<link></link>
 	<width>32</width>
 	<height>32</height>
