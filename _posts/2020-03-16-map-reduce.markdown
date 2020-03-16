@@ -1,0 +1,56 @@
+---
+layout: splash
+title:  "Map Reduce Paper Summary"
+date:   2020-03-16 16:22:00 +0800
+categories: ["system", "programming model", "paper summary"]
+tags: ["distributed system", "map reduce", "google"]
+---
+
+## Design
+
+```txt
+map (k1,v1) -> list(k2,v2)
+reduce (k2,list(v2)) -> list(v2)
+```
+
+A functional language like programming model, where map take in pair of input and output intermidiate kv pair and reduce does aggregation on key. Such programming model is flexible for any type of key-value related computation task. The key-value decomposition is aimed at distributed computation on thousands of machines with small computation power.
+
+![mr-arch](https://upload-images.jianshu.io/upload_images/18948038-e20e662e2af06b61?imageMogr2/auto-orient/strip|imageView2/2)
+
+1. user input data are split into chunks and replication among cluster for locality; user-program submit customized map-reduce program to the cluster and inform master to auto-schedule the task
+2. master pick a idle worker process and assign a map or reduce task
+3. user-defined map task read the chunk assigned; user-defined reduce task read intermidiate result (key group assigned).
+4. the locations of intermidiate result on disk are are known for master by notification
+5. system-defined map pass read chunks from disk and pass them to user defined map; system-defined reduce read all intermidiate file from disk, sort according to key and create key group for user defined reduce
+
+Map task and reduce task can be excecute in parallel. The creation of each intermidiate file is notified and record on master, so that more job can be added to an in-progress worker.
+
+This system can also achieve parallelism in maps and reduces. The parallelism among single type of task is natural since all data are treated as key-value pair, where a hash function can do the work of data and computation separation.
+
+### Efficiency
+
+map task should be assign with input using local replica to save bandwidth; if not possible, should choose a nearby replica in the sense of network topology.
+
+### Fault Tolerant
+
+Task schedule should be idempotent, where master should trace the state of processing of task. Execute one task more than once will most likely leads to a false output. Atomic commit should be granted on any file operation to a global view to achieve sequencial consistency.
+
+#### Master Failure
+
+Master can save the states to an external storage or have a backup. For simplicity, aborting the batch job can also be a choice.
+
+#### Worker Failure
+
+Failure of worker is detected by heartbeat from master. On worker failure, task is reassigned to another alive worker and redo the whole process. Reduce task may not be executed completely since output are stored in global file system.
+
+## Limitation
+
+1. only batched job, does not support stream for real time computation
+2. inefficient in job redo (fault tolerance)
+3. disk operations for every data
+4. $O(M+R)$ schedule decision and $O(M*R)$ states; there is a lot of communication which makes the whole process slow.
+
+## Reference
+
+1. Dean, Jeffrey, and Sanjay Ghemawat. ["MapReduce: simplified data processing on large clusters."](https://static.usenix.org/publications/library/proceedings/osdi04/tech/full_papers/dean/dean.pdf) Communications of the ACM 51.1 (2008): 107-113.
+2. Morris, Robert. [MIT 6.824 (Spring 2020)](https://pdos.csail.mit.edu/6.824/general.html).
