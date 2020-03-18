@@ -1,0 +1,145 @@
+---
+layout: splash
+title:  "GFS Paper Summary"
+date:   2020-03-18 15:44:57 +0800
+categories: ["system", "paper summary"]
+tags: ["distributed system", "storage", "google"]
+---
+
+A multi-tenant weakly consistent distributed file system
+
+- [Design](#design)
+  - [Assumptions](#assumptions)
+  - [Chunk Size](#chunk-size)
+  - [Architecture](#architecture)
+    - [Master](#master)
+      - [Snapshot](#snapshot)
+      - [Namespace Management and Locking](#namespace-management-and-locking)
+      - [Garbage Collection](#garbage-collection)
+  - [Consistency Model](#consistency-model)
+  - [System Interaction](#system-interaction)
+  - [Fault Tolerant](#fault-tolerant)
+- [Limitation](#limitation)
+- [Reference](#reference)
+
+## Design
+
+### Assumptions
+
+1. component failure are normal
+   - commodity cheap device for large scale deployment does not guarantee functioning
+   - large scale deployment statistically has more frequent component failure
+2. files are huge (at least 100MB-level file, GB-level files are common)
+   - GFS is aim for big data processing, so that this is a reasonable case; while for web hosting, files are small
+3. mostly append, rare overwrite; small random reads and large stream reads
+   - for AI data and log data usually append only
+   - big data access requires 1MB stream reads
+4. non-posix api
+   - allow weak consistency model to simplify system design and implementation
+   - allow atomic append for multi-tenant scenario without explict locking at client side
+5. design for high bandwidth rather than low latency
+
+### Chunk Size
+
+Comparing to the page size on disk the chunk size of 64MB is unusually large, while this is designed for big data system. In modern system, chunk size can be even larger to be 128MB
+
+- reduce ineraction between client and master (as for single master setting)
+- reduce network overhead by presistent TCP connection
+- reduce size of metadata to fit all into memory
+- need tune numer of replicas to avoid hotspot in small files access
+
+### Architecture
+
+![gfs](/assets/images/gfs.jpg)
+
+- client ask master for metadata
+- client I/O directly to chunkservers
+- use linux file system to store chunks (make use of OS cache), gives no server side cache in implementation
+- global knowledge of fixed chunk size
+
+A simple read can go as follows:
+
+1. client calculate chunk index according to offset and length
+2. client ask master for chunk location and offset+length in the chunks
+3. client cache chunk metadata
+4. client ask nearest chunkserver to read
+
+#### Master
+
+Master maintain the following metadata and make them presistent to disk by OPLOG and logging mutations:
+
+- maintain filesystem meta: namespace, ACL
+- ask each chunkserver for their chunks -> chunk locations
+- maintain chunk lease
+- garbage collection of orphaned chunks
+- chunk migration
+
+The metadata mutation are written to operation log, so that on master recovery master can redo the log to recover all states of the system. To have a faster log redo, master periodcally creates checkpoint for the log.
+
+##### Snapshot
+
+- revoke all lease on the chunks to snapshot
+- make operation log and duplicate metadata
+- client request to mutate will be redirect to a copy of the chunk on the same machine (save network bandwidth)
+
+##### Namespace Management and Locking
+
+- prefix compression (tree) of path
+- map absolute path to metadata
+- read/write lock can be granted and each level of path
+
+##### Garbage Collection
+
+The mechanism at master provide a simple and reliable way to collect stale chunks on any type of failure and does not interfere with any user activity. 
+
+- rename file to be hidden instead of delete data directly to prevent accidental deletion
+- compare chunkserver report and master record to decide orphan chunks to recycle
+- master keep the highest version number to keep track of stale chunks
+
+### Consistency Model
+
+![gfs-write](/assets/images/gfs-consistent.jpg)
+
+- `defined`: consistent and same order of mutation
+- `consistent`: clients all have the same global view
+- `inconsistent`: clients can see different data at different time
+
+The defined state is achieved by master keeping track of the order of mutation and use version number to detect stale chunks. When a chunk become stale in write failure, the chunk is not accessible and ready for garbage collection. There can be a window of caching that client read staled data, but later request ot master can grantee the consistency.
+
+### System Interaction
+
+The mutation and control is based on lease. Master can grant a lease to a chunk for a paticular chunkserver. This chunkserver serves as primary and perform mutation in order on all replicas.
+
+![gfs-write](/assets/images/gfs-write.jpg)
+
+In all system interaction, control flow is seperated from data flow:
+
+1. client ask master for a valid chunk to perform I/O
+2. master reply with identity of primary and secondary
+3. client push data to all target chunkserver; chunkserver cache the data until expire or control signal
+4. on all replicas receive, client send write request to primary; primary serialize data apply order and apply to local storage
+5. primary forward apply order to all replicas
+6. secondary reply to primary on operation success/fail
+7. any received error are reported to client, plus success (client retry mutation on primary failure)
+
+GFS does not garantee a atomic write, where write across chunk boundary can be overwritten by a concurrent client, since client library split a single write into two or more writes. Meanwhile each machine forward data (pipelined) to the closest replica and network condition varies overtime, the order of write is not guaranteed in a multi-tenant scenario.
+
+One important design pattern here is the atomic append. Even tough POSIX API does not garantee atomic append, commercial implementation still use atomic append in their backend and mimic random access on top. The idea here lays the fundation for modern cloud storage. It is also important that all replicas are appended at the same order. GFS implement this in a at least once sementics, so that we may encounter duplicated records on primary or wholes in secondaries.
+
+### Fault Tolerant
+
+- master and chunkserver state can be recover from stable storage
+- chunk replication to prevent rack power failure and disk failure
+- master state is replicated, shaow master is read-only
+
+## Limitation
+
+- single master not repliable for mordern setting, even service down for several is not acceptable in some scenario
+- tipically designed for multi-producer and single-consumer
+- single master can be a bottleneck
+- may not make full use of disk bandwidth due to kernel implementations
+
+## Reference
+
+1. Ghemawat, Sanjay, Howard Gobioff, and Shun-Tak Leung. ["The Google file system."](https://pdos.csail.mit.edu/6.824/papers/gfs.pdf) Proceedings of the nineteenth ACM symposium on Operating systems principles. 2003.
+2. Morris, Robert. [MIT 6.824 (Spring 2020)](https://pdos.csail.mit.edu/6.824/general.html).

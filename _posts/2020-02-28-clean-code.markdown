@@ -6,6 +6,8 @@ categories: ["programming"]
 tags: ["development", "clean code"]
 ---
 
+Why we need clean code? What is the standards for clean code?
+
 - [Introduction](#introduction)
   - [What is clean code](#what-is-clean-code)
   - [Why clean code is important](#why-clean-code-is-important)

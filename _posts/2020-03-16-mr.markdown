@@ -6,6 +6,16 @@ categories: ["system", "programming model", "paper summary"]
 tags: ["distributed system", "map reduce", "google"]
 ---
 
+A parallel programming model and architecture for key value processing
+
+- [Design](#design)
+  - [Efficiency](#efficiency)
+  - [Fault Tolerant](#fault-tolerant)
+    - [Master Failure](#master-failure)
+    - [Worker Failure](#worker-failure)
+- [Limitation](#limitation)
+- [Reference](#reference)
+
 ## Design
 
 ```txt
@@ -15,7 +25,7 @@ reduce (k2,list(v2)) -> list(v2)
 
 A functional language like programming model, where map take in pair of input and output intermidiate kv pair and reduce does aggregation on key. Such programming model is flexible for any type of key-value related computation task. The key-value decomposition is aimed at distributed computation on thousands of machines with small computation power.
 
-![mr-arch](https://upload-images.jianshu.io/upload_images/18948038-e20e662e2af06b61?imageMogr2/auto-orient/strip|imageView2/2)
+![mr-arch](/assets/images/mr.jpg)
 
 1. user input data are split into chunks and replication among cluster for locality; user-program submit customized map-reduce program to the cluster and inform master to auto-schedule the task
 2. master pick a idle worker process and assign a map or reduce task
