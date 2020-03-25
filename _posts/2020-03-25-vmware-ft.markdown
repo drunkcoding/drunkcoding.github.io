@@ -1,0 +1,67 @@
+---
+layout: splash
+title:  "VMware FT Paper Summary"
+date:   2020-03-25 21:18:47 +0800
+categories: ["system", "paper summary"]
+tags: ["distributed system", "virtual-machine", "vmware"]
+---
+
+VMware fault toerant state replica virtual machine
+
+- [Design](#design)
+- [Implementation](#implementation)
+  - [Disk IO](#disk-io)
+  - [Network IO](#network-io)
+- [Limitation](#limitation)
+- [Reference](#reference)
+
+## Design
+
+The general setting is a primary and a backup. Although primary and backup sits on different physical machines, they share the same virtual disk for input and output. Backup is not visible on network, so that all external input goes to primary. Primary replicate input to backup through logging channel. Server failure is detected by heartbeat while the system needs to ensure only one leader even with split brain.
+
+![ft-confi](/assets/images/ft-config.jpg)
+
+1. Deterministic operation: log exact sequence and replay log
+2. Non-determinictic operation: (timer, interupt) + log additional event information to trigger during replay
+
+To ensure an identical state or replayable states among primary and backup, two requirements must be garanteed:
+
+1. backup execution must be identical to the primary output
+2. primary cannot reply to client until log is asked by backup
+
+These two requirements ensure that backup can produce the same non-determinictic operation while primary fail to send the log while the output is applied. While primary fails after recieving a mutation and before it can send the log to backup, the OS-level network protocol can ensure the lost of packet. In addition, this mechanism implements at least once and duplication is also handled by OS.
+
+![ft-protocal](/assets/images/ft-protocal.jpg)
+
+Primary can keep excepting while backup fails by starting a new backup, while process of backup takeover is complex. Backup must apply all previous reply log before actual output. Backup also need to anounce itself as a new primary over the network, so that routers can forward packet to the new position. To prevent two primaries when meeting split brain, primary and backup maintain CAS on shared disk, so that before takeover, they can both test value on disk to ensure the other side is not a primary. The VM failed to perform a CAS, will stop itself from executing.
+
+## Implementation
+
+The load balacing among VM and meta management is handled by a cluster service. The service determines the position of new backup. The load of the host has effect on fault recovery and primary performace. If the backup log lag too much, the implementation must slow down primary by limit its CPU until backup catch up with primary. It can be the case that primary has continuous incomming IO which make backup migration difficult. In this situation, the primary must maintain a point where IO are complete.
+
+### Disk IO
+
+1. parallel disk access is force sequencial at same order for primary and backup
+2. disk operation raced with a memory access is traped and wait until the disk IO is completed (expensive solution)
+3. memory race is captured by a buffer and copied back to main memory when disk IO is completed (smart solution)
+4. there can be incomplete IO when primary fails, so that the implementation must inform the new primary on any IO failure. Since IO is sequencial and idempotent in this design, it is simpler to replay all these IO
+
+### Network IO
+
+1. async network IO in hypervisor add non-determinictic property to states, this must be disabled
+2. with serialized network IO, optimization must be made on hypervisor in packet transmission and filtering, which involves in replicating states with backup
+
+## Limitation
+
+1. only work with uni-processor VMs, multicore processor has non-determinictic memory order
+2. only deal with fail-stop failure, where failure is detected before it has any affect
+3. A log buffer is maintaining at primary and backup, primary must stop executing when log buffer is full and wait for backup to consume. This can affect client-side performance paticularly at a fault tolerant phase when backup fails.
+4. VM load balacing must be carefully designed, as as heavily loaded physical machine will affect the execution rate of backup, thus log buffer will tend to fill up at primary side.
+5. The speed of recovery is also affected by log lag and host load, which makes the system complex
+6. migration on load balancing can also affect user performance
+7. Sequentialize parallel access to ensure strong consistency at the cost of performace
+
+## Reference
+
+1. Scales, Daniel J., Mike Nelson, and Ganesh Venkitachalam. ["The design and evaluation of a practical system for fault-tolerant virtual machines."](https://pdos.csail.mit.edu/6.824/papers/vm-ft.pdf) Technical Report VMWare-RT-2010–001, VMWare (2010).
+2. Morris, Robert. [MIT 6.824 (Spring 2020)](https://pdos.csail.mit.edu/6.824/general.html).

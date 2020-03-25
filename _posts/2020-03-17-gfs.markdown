@@ -90,7 +90,7 @@ The metadata mutation are written to operation log, so that on master recovery m
 
 ##### Garbage Collection
 
-The mechanism at master provide a simple and reliable way to collect stale chunks on any type of failure and does not interfere with any user activity. 
+The mechanism at master provide a simple and reliable way to collect stale chunks on any type of failure and does not interfere with any user activity.
 
 - rename file to be hidden instead of delete data directly to prevent accidental deletion
 - compare chunkserver report and master record to decide orphan chunks to recycle
