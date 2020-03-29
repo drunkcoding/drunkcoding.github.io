@@ -3,7 +3,7 @@ layout: splash
 title:  "VMware FT Paper Summary"
 date:   2020-03-25 21:18:47 +0800
 categories: ["system", "paper summary"]
-tags: ["distributed system", "virtual-machine", "vmware"]
+tags: ["distributed system", "virtual machine", "vmware"]
 ---
 
 VMware fault toerant state replica virtual machine

@@ -1,0 +1,111 @@
+---
+layout: splash
+title:  "Raft (Extended) Paper Summary"
+date:   2020-03-29 12:10:37 +0800
+categories: ["system", "paper summary"]
+tags: ["distributed system", "consensus"]
+---
+
+An understandable distributed consensus protocol
+
+- [Principles](#principles)
+  - [Problem with Paxos](#problem-with-paxos)
+- [Design](#design)
+  - [Leader Election](#leader-election)
+  - [Log replication](#log-replication)
+  - [Log Compaction](#log-compaction)
+- [Limitation](#limitation)
+- [Reference](#reference)
+
+## Principles
+
+Solving a distributed consensus problem usually goes into a major category called replicated state machine. In this category, replication is solved by replicating state machine logs with determinictic operations. The resulting system should have the following property:
+
+1. safety under non-[Byzantine condition](https://en.wikipedia.org/wiki/Byzantine_fault)
+2. avaliable as long as majority of servers can operate can communicate
+3. consistency of log does not depend on timing
+4. majority success of execution indicate a completion of command
+
+### Problem with Paxos
+
+1. difficult to understand
+2. not a good funcdation for implementation, detailed for multiple decisions are either missing or too complex
+3. P2P approach is not efficient enough
+
+## Design
+
+Decomposition into subproblems:
+
+1. Leader election: responsible for data flow
+2. Log replication: leader force log consistency
+3. Safety: system does not go wrong
+   1. Election safety: at most one leader
+   2. Leader append only: append-only log
+   3. Log matching: index + term identifies a log entry
+   4. Leader completeness: log entry with a term present in leader with higher term
+   5. Sate machine safety: state machine apply unique index for a give log entry
+
+A server in raft has there states:
+
+1. Leader: handle all client request and manage log and log meta
+2. Follower: only response to request and redirect client request to leader
+3. Candidate: in the state of election
+
+![raft-state](/assets/images/raft-state.jpg)
+
+Time scale is divided into terms, where each term begin with an election. It is possible to have split vote, so that the system start a new term for next round election until a unique leader statnds out. We can reduce the possibility of split vote by randomize vote request. This approach also save the time for election process. Servers will regularly echange current term and update to the largest term. If a leader receives a larger term, this indicate that there is another leader elected, so downgrade itself to follower. The term can also present packet duplication and delay from stale state.
+
+![raft-state](/assets/images/raft-term.jpg)
+
+### Leader Election
+
+1. Leader periodically send AppendEntries with no log entries to all followers as heartbeat
+2. if follower does not receive heartbeat for a timeout period, it will start an election (suggest itself as leader)
+3. the election process end on a leader comes out or no winner at all
+4. vote is rejected when itself has more up-to-date log
+
+```go
+// LEADER
+broadcast heartbeat periodically
+if reply.term > currentTerm { become FOLLOWER }
+
+// FOLLOWER
+if (AppendEntries timeout) {
+    become candidate
+    currentTerm++
+    vote myself
+    RequestVote(self) to all
+}
+
+// CANDIDATE
+Wait collect vote
+if reply.term > currentTerm { become FOLLOWER }
+if vote timeout { start another election }
+if (votes > number of servers / 2 + 1) become leader
+```
+
+Another approach is to let the server with highest id to initiate election. The drawback is the time complexity when the candidate also fails, leading to a longer wait time for the election of correctly complete.
+
+### Log replication
+
+1. Leader append-only log
+2. inconsistent log entries will be discovered by term and index, follower log can be replaced by leader log
+3. exchange of common index is done among regular heartbeat
+4. leader election must be restricted for safety
+
+### Log Compaction
+
+1. simplest way to do log compaction is taking snapshot
+2. snapshot decision will only follow from leader to follower, where older snapshot can be discarded according to leader information
+3. each server do snapshot on its own and initiate snapshot upon a fixed used size
+4. use copy-on-write to separate snapshots from normal operation
+
+## Limitation
+
+1. appear to be single master, leader can be bottleneck and need delicated optimization
+2. paper did not mention performance on TPS
+
+## Reference
+
+1. Ongaro, Diego, and John Ousterhout. ["In search of an understandable consensus algorithm."](https://pdos.csail.mit.edu/6.824/papers/raft-extended.pdf) 2014 {USENIX} Annual Technical Conference ({USENIX}{ATC} 14). 2014.
+2. Morris, Robert. [MIT 6.824 (Spring 2020)](https://pdos.csail.mit.edu/6.824/general.html).
