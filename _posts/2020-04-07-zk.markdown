@@ -1,0 +1,34 @@
+---
+layout: splash
+title:  "Zookeeper Paper Summary"
+date:   2020-04-07 19:30:26 +0800
+categories: ["system", "paper summary"]
+tags: ["distributed system", "wait-free coordination", "yahoo"]
+---
+
+Wait-free coordination system targeting read heavy scenario, which grantees FIFO client order and linearizable writes
+
+## Design
+
+Namespace in Zookeeper are orgnized in the same way as in UNIX like file system. A zknode can store data.
+
+1. regular node: create and delete explicitly by client
+2. ephemeral node: create and delete explicitly by client; or automatically delete when session expires; cannot have children
+
+There are several function can be applied to each node:
+
+1. sequencial: node are created with auto-increment label in the name, garantee monotonicity
+2. watched: one-time trigger within the scope of a session register a watch event on the node; client will be notified on change; eventually the trigger will be delivered to client (garanteed)
+
+![zk-znode](/assets/images/zk-znode.jpg)
+
+ZooKeeper provides high availability by replication, which can also scale the read bandwidth. Change in node value will be replicated to each server on their database. The database is in-memory database where the entire tree is stored. Crached server can recover states from local storage. The state change has to be agreed on majority of servers to be success.
+
+![zk-service](/assets/images/zk-service.jpg)
+
+In order to achieve linearizable writes and FIFO ordering, when write to a node proceeds, all other read and writes to the same node can not be executed concurrently. Since the read request does not go through leader, client can read stale value, where client has to use extra `sync` call to wait for the latest value. Since the speed of commit can vary among servers, client request/response carry a sequence id for the state change to ensure to get its view on any server.
+
+## Reference
+
+1. Hunt, Patrick, et al. ["ZooKeeper: Wait-free Coordination for Internet-scale Systems."](https://pdos.csail.mit.edu/6.824/papers/zookeeper.pdf) USENIX annual technical conference. Vol. 8. No. 9. 2010.
+2. Morris, Robert. [MIT 6.824 (Spring 2020)](https://pdos.csail.mit.edu/6.824/general.html).
