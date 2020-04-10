@@ -1,0 +1,57 @@
+---
+layout: splash
+title:  "CRAQ Paper Summary"
+date:   2020-04-10 15:30:16 +0800
+categories: ["paper summary", "storage"]
+tags: ["distributed system", "chain replication"]
+---
+
+improved chain replication with geographically-diverse clusters for read-heavy scenario
+
+- [Design](#design)
+  - [Fault Tolerant](#fault-tolerant)
+- [Extension](#extension)
+- [Limitation](#limitation)
+- [Reference](#reference)
+
+## Design
+
+Chain replication ensures strong consistency by write at header node and read at tail node. The write will pipe along the chain, which consider to be success only every node have applied the write. As a result, the read at tail always have the latest value.
+
+![chain](/assets/images/chain.jpg)
+
+There are several for the simple chain replication:
+
+1. All read go to the same node, leading to a hot spot
+2. load balance along multiple chains is not good for practice
+3. write must go through all node in a chain before reply to client
+
+To allow read to apear on all nodes, we can mark each replica as *clean* or *dirty* with a version number. When a write replicas through the chain, each block is marked at dirty until it reachs the tail. To prevent read on a stale value, read can only be perform on clean data (checked via tail commit for the version number).
+
+![chain-clean](/assets/images/chain-clean.jpg)
+![chain-dirty](/assets/images/chain-dirty.jpg)
+
+There can be many ways to construct multiple chains replication with in a datacenter. A simple way can be hashing, also membership management with third party service can be a choice. While distributing chains across datacenters, we should carefully choose the construction so that locality and latency are both optimized.
+
+### Fault Tolerant
+
+The fault tolerant in chain replication is also simple, which is similar to add and remove a node from a linked list. While this require a leader election protocol or third party to decide the correct head and tail when there is a network partition. The chains can rely on ZooKeeper to decide the leader, while it also need to talk to each other in case any type of split brain can happen. In most cases, ZooKeeper is sufficient since it garantees the delivery of event.
+
+Remove a node from any place is simple. If we remove the head, the server next to the head become the new head, since it contains successful propagation of data. If we remove the tail, the server before the tail becomes the new tail, since it contain the commit. Even there is uncommitted data due to network on the new tail, it can safely recommit the data. Add a node involves more work. The newly added node need to data from successor and predecessor and construct the new state. while remuval needs data propagation from only one side.
+
+## Extension
+
+1. Head can batch write request for append operation
+2. Client can test the version number at head
+3. Head can perform a lock on an outstanding write according to a given id
+
+## Limitation
+
+1. Syncronization overhead in write, not as good as majority agreement
+2. Latency on write depend on tail latency, not acceptable for a high performance system
+3. Target for read-heavy scenario
+
+## Reference
+
+1. Terrace, Jeff, and Michael J. Freedman. ["Object Storage on CRAQ: High-Throughput Chain Replication for Read-Mostly Workloads."](https://pdos.csail.mit.edu/6.824/papers/craq.pdf)USENIX Annual Technical Conference. 2009.
+2. Morris, Robert. [MIT 6.824 (Spring 2020)](https://pdos.csail.mit.edu/6.824/general.html).

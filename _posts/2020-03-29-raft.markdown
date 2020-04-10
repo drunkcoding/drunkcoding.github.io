@@ -2,8 +2,8 @@
 layout: splash
 title:  "Raft (Extended) Paper Summary"
 date:   2020-03-29 12:10:37 +0800
-categories: ["system", "paper summary"]
-tags: ["distributed system", "consensus"]
+categories: ["paper summary", "consensus"]
+tags: ["distributed system"]
 ---
 
 An understandable distributed consensus protocol

@@ -2,7 +2,7 @@
 layout: splash
 title:  "Map Reduce Paper Summary"
 date:   2020-03-16 16:22:00 +0800
-categories: ["system", "programming model", "paper summary"]
+categories: ["programming model", "paper summary", "big data"]
 tags: ["distributed system", "map reduce", "google"]
 ---
 

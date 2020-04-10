@@ -2,7 +2,7 @@
 layout: splash
 title:  "GFS Paper Summary"
 date:   2020-03-18 15:44:57 +0800
-categories: ["system", "paper summary"]
+categories: ["paper summary", "storage"]
 tags: ["distributed system", "storage", "google"]
 ---
 

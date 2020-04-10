@@ -2,11 +2,14 @@
 layout: splash
 title:  "Zookeeper Paper Summary"
 date:   2020-04-07 19:30:26 +0800
-categories: ["system", "paper summary"]
-tags: ["distributed system", "wait-free coordination", "yahoo"]
+categories: ["paper summary", "coordination"]
+tags: ["distributed system", "wait-free coordination", "read-mostly workload", "yahoo"]
 ---
 
 Wait-free coordination system targeting read heavy scenario, which grantees FIFO client order and linearizable writes
+
+- [Design](#design)
+- [Reference](#reference)
 
 ## Design
 
