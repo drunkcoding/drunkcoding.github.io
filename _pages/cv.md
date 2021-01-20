@@ -6,6 +6,8 @@ author_profile: true
 
 ## Education
 
+- PhD in Network System, University of Edinburgh
+- Master in Computer Science, University of Illinois at Urbana Champaign, 2020
 - B.E. in Electronic and Computer Engineering, University of Michigan - Shanghai Jiao Tong University Joint Institute, 2018
 - B.A. Minor in English Translation, Shanghai Jiao Tong University, 2018
 

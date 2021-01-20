@@ -111,13 +111,13 @@ analytics:
 author:
   name             : "Leyang Xue"
   avatar           : "/assets/images/bio-photo.jpg" # path of avatar image, e.g. "/assets/images/bio-photo.jpg"
-  bio              : "Current enrolled in MCS program at University of Illinois at Urbana-Champaign."
-  location         : "Earth"
+  bio              : "PhD Student at University of Edinburgh."
+  location         : "Shanghai"
   # email            : "leyangx3@illinois.edu"
   links:
     - label: "Email"
       icon: "fas fa-fw fa-envelope-square"
-      url: mailto:leyangx3@illinois.edu
+      url: mailto:L.Xue-9@sms.ed.ac.uk
     - label: "GitHub"
       icon: "fab fa-fw fa-github"
       url: "https://github.com/drunkcoding"
